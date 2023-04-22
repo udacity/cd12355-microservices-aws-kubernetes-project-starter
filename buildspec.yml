@@ -9,7 +9,8 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG -f analytics/Dockerfile analytics
+      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG -f analytics/Dockerfile analytics || (echo "Docker build failed" && exit 1)
+
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:$IMAGE_TAG
 
   post_build:
