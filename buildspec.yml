@@ -10,7 +10,8 @@ phases:
     commands:
       - echo Building the Docker image...
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:$IMAGE_TAG
+      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG -f analytics/Dockerfile analytics
+
 
   post_build:
     commands:
