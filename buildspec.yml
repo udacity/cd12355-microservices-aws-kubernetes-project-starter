@@ -19,13 +19,8 @@ phases:
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
       - echo Build completed on `date`
 
-
-# Add this section
 cache:
   paths:
     - '/root/.cache/go-build/**/*'
     - '/root/.cache/go-mod/**/*'
 
-# Add this section
-docker:
-  privileged: true

@@ -1,0 +1,9 @@
+FROM amazon/aws-codebuild-standard:5.0
+
+# Install Docker
+RUN amazon-linux-extras install docker
+
+# Configure the Docker daemon to run in the background
+RUN echo -e '#!/bin/bash\n/usr/local/bin/dockerd &' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,37 @@
+
+        
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cowork
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cowork
+  template:
+    metadata:
+      labels:
+        app: cowork
+    spec:
+      containers:
+        - name: cowork
+          image: 963817942828.dkr.ecr.us-east-1.amazonaws.com/coworking:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /health_check
+              port: 5050
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: "/readiness_check"
+              port: 5050
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          env:
+          - name: VAR_KEY
+            value: VAR_VAL
+      restartPolicy: Always
