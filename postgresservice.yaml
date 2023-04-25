@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service # Create service
+metadata:
+  name: postgres # Sets the service name
+  namespace: default
+  labels:
+    app: postgres # Defines app to create service for
+spec:
+  #type:  # Sets the service type
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
