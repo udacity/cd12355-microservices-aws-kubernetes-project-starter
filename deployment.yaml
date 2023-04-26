@@ -19,13 +19,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health_check
-              port: 5050
+              port: 5153
             initialDelaySeconds: 5
             timeoutSeconds: 2
           readinessProbe:
             httpGet:
               path: "/readiness_check"
-              port: 5050
+              port: 5153
             initialDelaySeconds: 5
             timeoutSeconds: 5
           env:
@@ -48,7 +48,7 @@ spec:
   selector:
     app.kubernetes.io/name: example
   ports:
-  - name: "5050"
+  - name: "5153"
     protocol: TCP
-    port: 5050
-    targetPort: 5050
+    port: 5153
+    targetPort: 5153
