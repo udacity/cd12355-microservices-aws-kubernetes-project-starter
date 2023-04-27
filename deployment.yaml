@@ -46,7 +46,7 @@ metadata:
   name: example
 spec:
   selector:
-    app.kubernetes.io/name: example
+    app: cowork
   ports:
   - name: "5153"
     protocol: TCP
