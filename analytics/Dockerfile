@@ -10,8 +10,7 @@ COPY requirements.txt .
 # Install required packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the app directory content into the container
-COPY analytics/ .
+
 
 # Set environment variables
 ENV DB_USERNAME=postgres \
