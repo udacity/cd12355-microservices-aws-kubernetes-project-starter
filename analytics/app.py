@@ -21,12 +21,12 @@ def health_check():
     return "ok"
 
 
-@app.route("/readiness_check")
+
 @app.route("/readiness_check")
 def readiness_check():
     try:
         # Perform a simple database query to test the connection
-        db.session.query("1").from_statement("SELECT 1").all()
+        db.session.query(text('1')).from_statement(text("SELECT 1")).all()
     except OperationalError as e:
         app.logger.error(e)
         return "failed", 500

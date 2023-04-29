@@ -28,9 +28,28 @@ spec:
               port: 5153
             initialDelaySeconds: 5
             timeoutSeconds: 5
+
           env:
-          - name: VAR_KEY
-            value: VAR_VAL
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysecret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysecret
+                  key: POSTGRES_PASSWORD
+            - name: DB_HOST
+              value: postgres.default.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysecret
+                  key: POSTGRES_DB
+
           resources:
             limits:
               cpu: "1"
