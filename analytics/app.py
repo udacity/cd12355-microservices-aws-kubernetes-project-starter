@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 from flask import jsonify, request
 from sqlalchemy import and_, text
 from random import randint
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import OperationalError
+
 
 from config import app, db
 
@@ -19,14 +22,17 @@ def health_check():
 
 
 @app.route("/readiness_check")
+@app.route("/readiness_check")
 def readiness_check():
     try:
-        count = db.session.query(Token).count()
-    except Exception as e:
+        # Perform a simple database query to test the connection
+        db.session.query("1").from_statement("SELECT 1").all()
+    except OperationalError as e:
         app.logger.error(e)
         return "failed", 500
     else:
-        return "ok"
+        return "ok", 200
+
 
 
 def get_daily_visits():
