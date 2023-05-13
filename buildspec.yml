@@ -18,4 +18,3 @@ phases:
       - echo Pushing the Docker image...
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
       - echo Build completed on `date`
- 
