@@ -3,8 +3,11 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
+      - echo $AWS_DEFAULT_REGION
+      - echo $ECR_REPOSITORY
+      - aws ecr describe-repositories --repository-names $ECR_REPOSITORY || true
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
+
 
   build:
     commands:
