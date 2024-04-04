@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <NAME OF THE ConfigMap>
+data:
+  DB_NAME: <ENTER YOUR DB NAME HERE>
+  DB_USER: <ENTER YOUR USER NAME HERE>
+  DB_HOST: <ENTER YOUR DB HOST HERE>
+  DB_PORT: <ENTER YOUR DB PORT HERE>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <NAME OF THE Secret>
+type: Opaque
+data:
+  <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>: <OUTPUT OF `echo -n 'the password' | base64`>
