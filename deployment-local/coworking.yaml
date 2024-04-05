@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: coworking
 spec:
+  # A local environment doesn't generally have a LoadBalancer, so we use NodePort instead.
   type: NodePort
   selector:
     service: coworking
@@ -30,6 +31,7 @@ spec:
     spec:
       containers:
       - name: coworking
+        # Locally hosted docker image
         image: <DOCKER_IMAGE_NAME>:<IMAGE_TAG>
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -44,18 +46,13 @@ spec:
             port: 5153
           initialDelaySeconds: 5
           timeoutSeconds: 5
+        envFrom:
+        - configMapRef:
+            name: <NAME OF THE ConfigMap>
         env:
-        - name: DB_HOST
-          value: <SERVICE_NAME>-postgresql
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_USERNAME
-          value: postgres
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: <SERVICE_NAME>-postgresql
-              key: postgres-password
-        - name: DB_NAME
-          value: postgres
+              name: <NAME OF THE Secret>
+              key: <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>
       restartPolicy: Always

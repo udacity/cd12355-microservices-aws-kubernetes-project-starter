@@ -2,4 +2,4 @@ APScheduler==3.10.4
 Flask==3.0.2
 flask_sqlalchemy==3.1.1
 SQLAlchemy==2.0.27
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
