@@ -8,7 +8,7 @@ RUN pip install --upgrade pip setuptools wheel
 
 WORKDIR /app
 
-COPY ./requirements.txt requirements.txt
+COPY ./analytics/requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt
 
@@ -22,8 +22,8 @@ ENV DB_PORT=5433
 
 ENV DB_NAME=coworkingdatabase
 
-COPY ./config.py .
+COPY ./analytics/config.py .
 
-COPY ./app.py .
+COPY ./analytics/app.py .
 
 CMD python app.py
