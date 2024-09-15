@@ -1,0 +1,13 @@
+my submission's details
+it includes:
+    Dockerfile:                                                         <project-path>\Dockerfile
+    Screenshot of AWS CodeBuild pipeline:                               <project-path>\images\codebuild_triggered_by_github_hook.png
+    Screenshot of AWS ECR repository for the application's repository:  <project-path>\images\docker_image_pushed_to_ERC.png
+    Screenshot of kubectl get svc:                                      <project-path>\images\kubectl_get_svc.png
+    Screenshot of kubectl get pods:                                     <project-path>\images\kubectl_get_pods.png
+    Screenshot of kubectl describe svc postgresql-service:              <project-path>\images\kubectl_describe_svc_postgresql-service.png
+    Screenshot of kubectl describe deployment postgresql:               <project-path>\images\kubectl_describe_deployment_postgresql.png
+    Screenshot of kubectl describe deployment coworking:                <project-path>\images\kubectl_describe_deployment_coworking.png
+    All Kubernetes config files used for deployment:                    <project-path>\deployment
+    Screenshot of AWS CloudWatch logs for the application:              <project-path>\images\Cloudwatch_log.png
+    README.md:                                                          <project-path>\README.md

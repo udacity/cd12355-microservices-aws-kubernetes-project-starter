@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: coworking
-        image: <DOCKER_IMAGE_URI_FROM_ECR>
+        image: 569135852524.dkr.ecr.us-east-1.amazonaws.com/coworking:4
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -46,11 +46,31 @@ spec:
           timeoutSeconds: 5
         envFrom:
         - configMapRef:
-            name: <NAME OF THE ConfigMap>
+            name: project3-config-map
         env:
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: project3-config-map
+              key: DB_NAME
+        - name: DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: project3-config-map
+              key: DB_USER
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: project3-config-map
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: project3-config-map
+              key: DB_PORT
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: <NAME OF THE Secret>
-              key: <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>
+              name: project3-secrets
+              key: password
       restartPolicy: Always
