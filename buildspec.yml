@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 037170567112.dkr.ecr.us-east-1.amazonaws.com
+      - REPOSITORY_URI=037170567112.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics
+      - IMAGE_TAG=$CODEBUILD_BUILD_NUMBER
+  
+  build:
+    commands:
+      - echo Build started on `date`
+      - cd analytics
+      - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+      - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:latest
+  
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - docker push $REPOSITORY_URI:latest
+      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
+
+artifacts:
+  files:
+    - analytics/imageDetail.json
+    - analytics/appspec.yaml
+    - analytics/taskdef.json
