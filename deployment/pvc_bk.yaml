@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-my-postgresql-0 # Ensure this matches your PVC name used by the helm chart
+spec:
+  storageClassName: gp2 # or standard if you use this storageClassName
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

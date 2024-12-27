@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "5153:5153" # Expose the app port
+    environment:
+        DB_USERNAME: postgres
+        DB_PASSWORD: test
+        DB_HOST: postgres  # Use the service name
+        DB_PORT: 5432
+        DB_NAME: postgres
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+     POSTGRES_PASSWORD: test

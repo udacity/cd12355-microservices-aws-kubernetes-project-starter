@@ -1,0 +1,30 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+
+      # Build the application image
+      - echo Building the app Docker image...
+      - docker build -t $APP_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER .
+      - docker tag $APP_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER
+
+      # Build the postgres image
+      - echo Building the postgres Docker image...
+      - docker pull postgres:latest
+      - docker tag postgres:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$POSTGRES_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER
+  post_build:
+    commands:
+      - echo Build completed on `date`
+
+      # Push the application image
+      - echo Pushing the app Docker image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER
+
+      # Push the postgres image
+      - echo Pushing the postgres Docker image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$POSTGRES_IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER

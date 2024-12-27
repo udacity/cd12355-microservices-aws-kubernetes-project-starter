@@ -1,0 +1,4 @@
+postgresqlPort: 5432
+auth:
+  postgresPassword: "mypassword"
+  username: "myuser"
