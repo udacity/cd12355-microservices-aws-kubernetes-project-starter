@@ -48,7 +48,7 @@ spec:
           timeoutSeconds: 5
         envFrom:
         - configMapRef:
-            name: <NAME OF THE ConfigMap>
+            name: coworking-postgresql
         env:
         - name: DB_PASSWORD
           valueFrom:

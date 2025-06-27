@@ -1,131 +1,274 @@
-# Coworking Space Service Extension
+# **Coworking Space Service Extension – DevOps Deployment**
 The Coworking Space Service is a set of APIs that enables users to request one-time tokens and administrators to authorize access to a coworking space. This service follows a microservice pattern and the APIs are split into distinct services that can be deployed and managed independently of one another.
 
-For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
+## **Table of Contents**
 
-## Getting Started
+   [Prerequisites](#prerequisites)
 
-### Dependencies
-#### Local Environment
-1. Python Environment - run Python 3.6+ applications and install Python dependencies via `pip`
-2. Docker CLI - build and run Docker images locally
-3. `kubectl` - run commands against a Kubernetes cluster
-4. `helm` - apply Helm Charts to a Kubernetes cluster
-
-#### Remote Resources
-1. AWS CodeBuild - build Docker images remotely
-2. AWS ECR - host Docker images
-3. Kubernetes Environment with AWS EKS - run applications in k8s
-4. AWS CloudWatch - monitor activity and logs in EKS
-5. GitHub - pull and clone code
-
-### Setup
-#### 1. Configure a Database
-Set up a Postgres database using a Helm Chart.
-
-1. Set up Bitnami Repo
-```bash
-helm repo add <REPO_NAME> https://charts.bitnami.com/bitnami
-```
-
-2. Install PostgreSQL Helm Chart
-```
-helm install <SERVICE_NAME> <REPO_NAME>/postgresql
-```
-
-This should set up a Postgre deployment at `<SERVICE_NAME>-postgresql.default.svc.cluster.local` in your Kubernetes cluster. You can verify it by running `kubectl svc`
-
-By default, it will create a username `postgres`. The password can be retrieved with the following command:
-```bash
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace default <SERVICE_NAME>-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
-
-echo $POSTGRES_PASSWORD
-```
-
-<sup><sub>* The instructions are adapted from [Bitnami's PostgreSQL Helm Chart](https://artifacthub.io/packages/helm/bitnami/postgresql).</sub></sup>
-
-3. Test Database Connection
-The database is accessible within the cluster. This means that when you will have some issues connecting to it via your local environment. You can either connect to a pod that has access to the cluster _or_ connect remotely via [`Port Forwarding`](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/)
-
-* Connecting Via Port Forwarding
-```bash
-kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
-```
-
-* Connecting Via a Pod
-```bash
-kubectl exec -it <POD_NAME> bash
-PGPASSWORD="<PASSWORD HERE>" psql postgres://postgres@<SERVICE_NAME>:5432/postgres -c <COMMAND_HERE>
-```
-
-4. Run Seed Files
-We will need to run the seed files in `db/` in order to create the tables and populate them with data.
-
-```bash
-kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432 < <FILE_NAME.sql>
-```
-
-### 2. Running the Analytics Application Locally
-In the `analytics/` directory:
-
-1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-2. Run the application (see below regarding environment variables)
-```bash
-<ENV_VARS> python app.py
-```
-
-There are multiple ways to set environment variables in a command. They can be set per session by running `export KEY=VAL` in the command line or they can be prepended into your command.
-
-* `DB_USERNAME`
-* `DB_PASSWORD`
-* `DB_HOST` (defaults to `127.0.0.1`)
-* `DB_PORT` (defaults to `5432`)
-* `DB_NAME` (defaults to `postgres`)
-
-If we set the environment variables by prepending them, it would look like the following:
-```bash
-DB_USERNAME=username_here DB_PASSWORD=password_here python app.py
-```
-The benefit here is that it's explicitly set. However, note that the `DB_PASSWORD` value is now recorded in the session's history in plaintext. There are several ways to work around this including setting environment variables in a file and sourcing them in a terminal session.
-
-3. Verifying The Application
-* Generate report for check-ins grouped by dates
-`curl <BASE_URL>/api/reports/daily_usage`
-
-* Generate report for check-ins grouped by users
-`curl <BASE_URL>/api/reports/user_visits`
-
-## Project Instructions
-1. Set up a Postgres database with a Helm Chart
-2. Create a `Dockerfile` for the Python application. Use a base image that is Python-based.
-3. Write a simple build pipeline with AWS CodeBuild to build and push a Docker image into AWS ECR
-4. Create a service and deployment using Kubernetes configuration files to deploy the application
-5. Check AWS CloudWatch for application logs
-
-### Deliverables
-1. `Dockerfile`
-2. Screenshot of AWS CodeBuild pipeline
-3. Screenshot of AWS ECR repository for the application's repository
-4. Screenshot of `kubectl get svc`
-5. Screenshot of `kubectl get pods`
-6. Screenshot of `kubectl describe svc <DATABASE_SERVICE_NAME>`
-7. Screenshot of `kubectl describe deployment <SERVICE_NAME>`
-8. All Kubernetes config files used for deployment (ie YAML files)
-9. Screenshot of AWS CloudWatch logs for the application
-10. `README.md` file in your solution that serves as documentation for your user to detail how your deployment process works and how the user can deploy changes. The details should not simply rehash what you have done on a step by step basis. Instead, it should help an experienced software developer understand the technologies and tools in the build and deploy process as well as provide them insight into how they would release new builds.
+1. [Create EKS Cluster](#create-eks-cluster)
+   - [Install AWS CLI](#install-aws-cli)
+   - [Create an EKS Cluster](#create-an-eks-cluster)
+   - [Update Kubeconfig](#update-kubeconfig)
+2. [Configure Database for the Service](#configure-database-for-the-service)
+   - [Create YAML Configurations](#21-create-yaml-configurations)
+   - [Update postgresql-deployment.yaml](#22-update-postgresql-deploymentyaml)
+   - [Apply the Yaml configurations](#23-apply-the-yaml-configurations)
+   - [Test Database Connection](#24-test-database-connection)
+   - [Connecting service and Port Forwarding](#25-connecting-service-and-port-forwarding)
+   - [Create Tables and Populate Data](#26-create-tables-and-populate-data)
+   - [Set Port Forwarding](#27-set-port-forwarding)
+3. [Install Dependencies and Run the application](#install-dependencies-and-run-the-application)
+   - [Install dependencies](#31-install-dependencies)
+   - [Set Environment Variables](#32-set-environment-variables)
+   - [Run the application](#33-run-the-application)
+   - [Verify the application](#34-verify-the-application)
+4. [Deploy the Analytics Application](#deploy-the-analytics-application)
+   - [Build the Docker Image](#41-build-the-docker-image)
+   - [Run the Docker Image](#42-run-the-docker-image)
+   - [Set up CI with Codebuild](#43-set-up-ci-with-codebuild)
+   - [Deploy the Application](#44-deploy-the-application)
 
 
-### Stand Out Suggestions
-Please provide up to 3 sentences for each suggestion. Additional content in your submission from the standout suggestions do _not_ impact the length of your total submission.
-1. Specify reasonable Memory and CPU allocation in the Kubernetes deployment configuration
-2. In your README, specify what AWS instance type would be best used for the application? Why?
-3. In your README, provide your thoughts on how we can save on costs?
+### Prerequisites
 
-### Best Practices
-* Dockerfile uses an appropriate base image for the application being deployed. Complex commands in the Dockerfile include a comment describing what it is doing.
-* The Docker images use semantic versioning with three numbers separated by dots, e.g. `1.2.1` and  versioning is visible in the  screenshot. See [Semantic Versioning](https://semver.org/) for more details.
+Before you begin, ensure that you have the following tools installed:
+
+  **Python (3.6+)**: Install Python from the [official website](https://www.python.org/downloads/).
+
+  **Docker CLI**: Install Docker for building and running containers locally. [Docker Installation Guide](https://docs.docker.com/get-docker/).
+
+  **kubectl**: Install `kubectl` to interact with the Kubernetes cluster. [Kubernetes Installation Guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
+
+1. ### **Create EKS Cluster:**
+    
+    **1.1: Install AWS CLI**: 
+    
+      [AWS instructions to install/update AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+  
+      Ensure AWS CLI is configured Properly: ```aws sts get-caller-identity```
+      
+      Configure AWS settings: ```aws configure``` and set the AWS credentials
+
+    **1.2: Create an EKS Cluster**:
+
+    ```eksctl create cluster --name my-cluster --region us-east-1 --nodegroup-name my-nodes --node-type t3.small --nodes 1 --nodes-min 1 --nodes-max 2```
+
+    **1.3: Update Kubeconfig**:
+    ```aws eks --region us-east-1 update-kubeconfig --name my-cluster```
+
+2. ###  **Configure Database for the Service**:  
+  
+      #### **2.1: Create YAML Configurations**:
+
+      **PersistentVolumeClaim (`pvc.yaml`)**:
+      ```yaml
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: postgresql-pvc
+      spec:
+        storageClassName: gp2
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      ```
+
+      **PersistentVolume (`pv.yaml`)**:
+      ```yaml
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: my-manual-pv
+      spec:
+        capacity:
+          storage: 1Gi
+        accessModes:
+          - ReadWriteOnce
+        persistentVolumeReclaimPolicy: Retain
+        storageClassName: gp2
+        hostPath:
+          path: "/mnt/data"
+      ```
+
+      **postgres-deployment.yaml**:
+      ```yaml
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+      spec:
+        selector:
+          matchLabels:
+            app: postgresql
+        template:
+          metadata:
+            labels:
+              app: postgresql
+          spec:
+            containers:
+            - name: postgresql
+              image: postgres:latest
+              env:
+              - name: POSTGRES_DB
+                value: mydatabase
+              - name: POSTGRES_USER
+                value: myuser
+              - name: POSTGRES_PASSWORD
+                value: mypassword
+              ports:
+              - containerPort: 5432
+              volumeMounts:
+              - mountPath: /var/lib/postgresql/data
+                name: postgresql-storage
+            volumes:
+            - name: postgresql-storage
+              persistentVolumeClaim:
+                claimName: postgresql-pvc
+      ```
+
+
+      #### **2.2 Update postgresql-deployment.yaml**:  
+          Update the following fields in `postgresql-deployment.yaml`:
+      - Database name: `mydatabase`
+      - Username: `myuser`
+      - Password: `mypassword`
+
+      #### **2.3. Apply the Yaml configurations**:
+      ```bash
+      kubectl apply -f pvc.yaml
+      kubectl apply -f pv.yaml
+      kubectl apply -f postgresql-deployment.yaml
+      ```
+
+      #### **2.4 Test Database Connection**:
+      
+      View Pods:
+      ```bash
+          kubectl get pods
+      ```
+      Open Bash into the pod:
+      ```bash
+      kubectl exec -it <postgres pod name> -- bash
+      ```
+      Once you are inside the pod, you can run to login to the postgres database. Ensure to change the username and password, as applicable to you.
+      ```bash
+      psql -U myuser -d mydatabase
+      ```
+      Once you are inside the postgres database, you can list all databases
+      ```bash
+      \l
+      ```
+
+      #### **2.5 Connecting service and Port Forwarding:**
+      Create a YAML file, **postgresql-service.yaml** and apply it
+      ```bash
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql-service
+      spec:
+        ports:
+        - port: 5432
+          targetPort: 5432
+        selector:
+          app: postgresql
+      ```
+      
+      Verify if the service is created: ```kubectl get svc```
+      Once the service is created, do port forwading using below command
+
+      ```bash
+      kubectl port-forward service/postgresql-service 5433:5432 &
+      ```
+
+      #### **2.6 Create Tables and Populate Data:**
+
+      Install PostgreSQL (if not installed) : Run Seed Files in db/ directory
+      ```bash
+          apt update
+          apt install postgresql postgresql-contrib
+          export DB_PASSWORD=mypassword
+      ```
+
+      Run the below command once for each SQL file :
+      ```bash
+          PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U myuser -d mydatabase -p 5433 < <FILE_NAME.sql>
+      ```
+
+      #### **2.7 Set Port Forwarding:**
+      
+      ```bash
+          kubectl port-forward svc/postgresql-service 5433:5432 &
+      ```
+
+
+3. ###  **Install Dependencies and Run the application**:
+
+      #### **3.1 Install dependencies:**
+      Run the below commands     
+      ```bash
+          apt update
+          apt install build-essential libpq-dev
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+      ```
+      #### **3.2 Set Environment Variables:**
+   
+      ```bash
+          export DB_USERNAME=myuser
+          export DB_PASSWORD=${POSTGRES_PASSWORD}
+          export DB_HOST=127.0.0.1
+          export DB_PORT=5433
+          export DB_NAME=mydatabase
+      ```
+
+      #### **3.3 Run the application:**
+   
+      ```bash
+          python app.py
+      ```
+
+      #### **3.4 Verify the application:**
+   
+      ```bash
+          curl <BASE_URL>/api/reports/daily_usage
+          curl <BASE_URL>/api/reports/user_visits
+      ```
+
+4. ###  **Deploy the Analytics Application**:
+
+      #### **4.1 Build the Docker Image:**
+   
+      ```bash
+          docker build -t test-coworking-analytics .
+      ```
+
+      #### **4.2 Run the Docker Image:**
+   
+      ```bash
+          docker run --network="host" test-coworking-analytics
+      ```
+
+      #### **4.3 Set up CI with Codebuild**:
+
+      1. Create Amazon ECR repository on your AWS console
+      2. create an Amazon CodeBuild project that is connected to your project's GitHub repository.
+      3. Once they are done, create a buildspec.yaml file that will be triggered whenever the project repository is updated
+      4. Click on the "Start Build" button on your CodeBuild console and then check out Amazon ECR to see if the Docker image is created/updated.
+      
+      #### **4.4 Deploy the Application**:
+
+      1. Create a ConfigMap to store all the plaintext variables such as DB_HOST, DB_USERNAME, DB_PORT, DB_NAME.
+      2. Create a Secret to store all the sensitive environment variables such as (DB_PASSWORD).
+      3. Create a deployment YAML file to deploy the finalized Docker image in your ECR repository to your Kubernetes network
+      4. Verify the deployment using the below command:
+
+      ```bash
+          kubectl get svc
+      ```
+
+**Note: delete Kubeconfig after finishing the project**:
+    
+  ```eksctl delete cluster --name my-cluster --region us-east-1```

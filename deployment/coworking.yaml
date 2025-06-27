@@ -30,27 +30,32 @@ spec:
     spec:
       containers:
       - name: coworking
-        image: <DOCKER_IMAGE_URI_FROM_ECR>
-        imagePullPolicy: IfNotPresent
+        image: 844803164773.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics:11
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /health_check
             port: 5153
-          initialDelaySeconds: 5
-          timeoutSeconds: 2
+          initialDelaySeconds: 120
+          timeoutSeconds: 5
+          periodSeconds: 10        # Check every 10 seconds
+          failureThreshold: 3      # After 3 failures, mark the container as unhealthy
         readinessProbe:
           httpGet:
             path: "/readiness_check"
             port: 5153
-          initialDelaySeconds: 5
+          initialDelaySeconds: 120
           timeoutSeconds: 5
+          periodSeconds: 10        # Check every 10 seconds
+          failureThreshold: 3      # After 3 failures, mark the container as not ready
         envFrom:
         - configMapRef:
-            name: <NAME OF THE ConfigMap>
+            name: coworking-postgresql
         env:
+
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: <NAME OF THE Secret>
-              key: <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>
+              name: dbsecret
+              key: DB_PASSWORD
       restartPolicy: Always
