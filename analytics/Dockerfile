@@ -1,4 +1,4 @@
-FROM python:3.6-slim
+FROM public.ecr.aws/sam/build-python3.6:latest
 
 USER root
 
