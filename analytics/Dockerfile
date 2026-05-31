@@ -1,4 +1,4 @@
-FROM public.ecr.aws/sam/build-python3.6:latest
+FROM public.ecr.aws/docker/library/python:3.6-slim
 
 USER root
 
