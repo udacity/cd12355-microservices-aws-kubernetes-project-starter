@@ -1,5 +1,5 @@
-APScheduler==3.10.4
-Flask==3.0.2
-flask_sqlalchemy==3.1.1
-SQLAlchemy==2.0.27
-psycopg2-binary==2.9.9
+APScheduler>=3.0.0,<4.0.0
+Flask>=2.0.0,<3.0.0
+flask_sqlalchemy>=2.5.0,<3.0.0
+SQLAlchemy>=1.4.0,<2.0.0
+psycopg2-binary>=2.8.0,<3.0.0

@@ -27,10 +27,14 @@ spec:
     metadata:
       labels:
         service: coworking
+      annotations: 
+        sidecar.opentelemetry.io/inject: "false"
+        instrumentation.opentelemetry.io/inject-python: "false"
+        instrumentation.opentelemetry.io/inject-sdk: "false"
     spec:
       containers:
       - name: coworking
-        image: <DOCKER_IMAGE_URI_FROM_ECR>
+        image: 423656921501.dkr.ecr.us-east-1.amazonaws.com/test-coworking-analytics:3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -46,11 +50,13 @@ spec:
           timeoutSeconds: 5
         envFrom:
         - configMapRef:
-            name: <NAME OF THE ConfigMap>
+            name: app-env-config
         env:
+        - name: OTEL_TRACES_EXPORTER
+          value: "none"
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: <NAME OF THE Secret>
-              key: <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>
+              name: app-env-secret 
+              key: DB_PASSWORD
       restartPolicy: Always
