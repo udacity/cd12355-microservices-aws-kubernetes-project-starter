@@ -32,7 +32,7 @@ spec:
       containers:
       - name: coworking
         # Locally hosted docker image
-        image: <DOCKER_IMAGE_NAME>:<IMAGE_TAG>
+        image: 423656921501.dkr.ecr.us-east-1.amazonaws.com/test-coworking-analytics:3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:

@@ -8,9 +8,44 @@ For this project, you are a DevOps engineer who will be collaborating with a tea
 ### Dependencies
 #### Local Environment
 1. Python Environment - run Python 3.6+ applications and install Python dependencies via `pip`
+```bash
+apt update
+apt install build-essential libpq-dev
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+```
 2. Docker CLI - build and run Docker images locally
+```bash
+docker build -t test-coworking-analytics .
+docker run --network="host" test-coworking-analytics
+```
 3. `kubectl` - run commands against a Kubernetes cluster
+```bash
+kubectl apply -f deployment/pv.yaml
+kubectl apply -f deployment/pvc.yaml
+
+# security configuration
+kubectl apply -f deployment/configmap.yaml
+
+# create secret
+kubectl apply -f deployment/secret.yaml
+
+kubectl apply -f deployment/postgresql-deployment.yaml
+#open ports
+kubectl apply -f deployment/postgresql-service.yaml
+
+#display kubernetes ressources
+kubectl get svc
+kubectl get pods
+kubectl get pvc
+kubectl get pv
+kubectl get secrets
+```
 4. `helm` - apply Helm Charts to a Kubernetes cluster
+```bash
+helm repo add < chart_name > <chat_repo >
+helm install --set key=value < chart_name > < chart_repos >
+```
 
 #### Remote Resources
 1. AWS CodeBuild - build Docker images remotely
