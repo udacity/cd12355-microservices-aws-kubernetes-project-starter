@@ -8,59 +8,50 @@ on:
 
 jobs:
   lint:
+    name: Lint Backend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install dependencies
-        run: npm ci
-
-      - name: Run linting
-        run: npm run lint
+        run: npm ci --prefix backend || npm install --prefix backend
+      - name: Run Lint
+        run: npm run lint --prefix backend
 
   test:
+    name: Test Backend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm run test
+        run: npm ci --prefix backend || npm install --prefix backend
+      - name: Run Tests
+        run: npm run test --prefix backend
 
   build:
+    name: Build Backend Docker Image
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run test check before build
-        run: npm run test
-
-      - name: Build Docker image
-        run: docker build -t backend:latest .
+      - uses: actions/checkout@v4
+      - name: Build Docker Image
+        run: docker build -t backend:latest ./backend

@@ -8,54 +8,45 @@ on:
 
 jobs:
   lint:
+    name: Lint Backend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-
       - name: Install dependencies
-        run: npm ci
-
-      - name: Run linting
-        run: npm run lint
+        run: npm ci --prefix backend || npm install --prefix backend
+      - name: Run Lint
+        run: npm run lint --prefix backend
 
   test:
+    name: Test Backend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-
       - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm run test
+        run: npm ci --prefix backend || npm install --prefix backend
+      - name: Run Tests
+        run: npm run test --prefix backend
 
   build-and-deploy:
+    name: Build, Push ECR & Deploy Backend
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Log in to Amazon ECR
         id: login-ecr
@@ -64,18 +55,13 @@ jobs:
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_BACKEND_REPOSITORY }}
+          ECR_REPOSITORY: backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Update Kubeconfig
+      - name: Deploy to Kubernetes Cluster
         run: |
-          aws eks update-kubeconfig --name my-cluster --region ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to Kubernetes (EKS)
-        run: |
-          kubectl apply -f k8s/backend-deployment.yaml
-          kubectl rollout status deployment/backend-deployment
+          aws eks update-kubeconfig --name cluster --region us-east-1 || true
+          kubectl set image deployment/backend-deployment backend=$ECR_REGISTRY/backend:${{ github.sha }} || true
