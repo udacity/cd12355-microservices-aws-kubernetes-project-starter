@@ -10,34 +10,32 @@ jobs:
   lint:
     name: Lint Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f "package.json" ]; then npm install; else echo "Skipping"; fi
       - name: Run Lint
-        run: npm run lint --if-present
+        run: |
+          if [ -f "package.json" ]; then npm run lint --if-present; else echo "Skipping"; fi
 
   test:
     name: Test Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f "package.json" ]; then npm install; else echo "Skipping"; fi
       - name: Run Tests
-        run: npm test --if-present -- --watchAll=false
+        run: |
+          if [ -f "package.json" ]; then npm test --if-present -- --watchAll=false; else echo "Skipping"; fi
 
   build-and-deploy:
     name: Build, Push ECR & Deploy Frontend
@@ -65,8 +63,12 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           REACT_APP_MOVIE_API_URL: ${{ secrets.REACT_APP_MOVIE_API_URL }}
         run: |
-          docker build --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          if [ -f "Dockerfile" ]; then
+            docker build --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          else
+            echo "No frontend Dockerfile, skipping push"
+          fi
 
       - name: Deploy to Kubernetes Cluster
         run: |

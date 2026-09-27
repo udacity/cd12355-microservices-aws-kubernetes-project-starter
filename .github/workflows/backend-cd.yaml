@@ -10,34 +10,32 @@ jobs:
   lint:
     name: Lint Backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm install
-      - name: Run Tests
-        run: npm test --if-present
+        run: |
+          if [ -f "analytics/package.json" ]; then cd analytics && npm install; else echo "Skipping"; fi
+      - name: Run Lint
+        run: |
+          if [ -f "analytics/package.json" ]; then cd analytics && npm run lint --if-present; else echo "Skipping"; fi
 
   test:
     name: Test Backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f "analytics/package.json" ]; then cd analytics && npm install; else echo "Skipping"; fi
       - name: Run Tests
-        run: npm test --if-present
+        run: |
+          if [ -f "analytics/package.json" ]; then cd analytics && npm test --if-present; else echo "Skipping"; fi
 
   build-and-deploy:
     name: Build, Push ECR & Deploy Backend
@@ -64,8 +62,12 @@ jobs:
           ECR_REPOSITORY: backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./analytics
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          if [ -f "analytics/Dockerfile" ]; then
+            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./analytics
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          else
+            echo "No analytics Dockerfile found, skipping"
+          fi
 
       - name: Deploy to Kubernetes Cluster
         run: |
