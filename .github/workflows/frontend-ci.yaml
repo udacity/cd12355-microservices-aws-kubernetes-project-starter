@@ -10,6 +10,9 @@ jobs:
   lint:
     name: Lint Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,23 +26,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Install dependencies
-        run: |
-          if [ -d "frontend" ]; then
-            npm ci --prefix frontend || npm install --prefix frontend
-          else
-            npm ci || npm install
-          fi
+        run: npm install
       - name: Run Lint
-        run: |
-          if [ -d "frontend" ]; then
-            npm run lint --prefix frontend || true
-          else
-            npm run lint || true
-          fi
+        run: npm run lint --if-present
 
   test:
     name: Test Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,19 +49,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Install dependencies
-        run: |
-          if [ -d "frontend" ]; then
-            npm ci --prefix frontend || npm install --prefix frontend
-          else
-            npm ci || npm install
-          fi
+        run: npm install
       - name: Run Tests
-        run: |
-          if [ -d "frontend" ]; then
-            npm run test --prefix frontend -- --watchAll=false || true
-          else
-            npm run test -- --watchAll=false || true
-          fi
+        run: npm test --if-present -- --watchAll=false
 
   build:
     name: Build Frontend Docker Image
@@ -74,9 +60,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker Image
-        run: |
-          if [ -d "frontend" ]; then
-            docker build -t frontend:latest ./frontend
-          else
-            docker build -t frontend:latest .
-          fi
+        run: docker build -t frontend:latest .

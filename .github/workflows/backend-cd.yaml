@@ -10,48 +10,34 @@ jobs:
   lint:
     name: Lint Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: |
-          if [ -d "analytics" ]; then
-            npm ci --prefix analytics || npm install --prefix analytics
-          else
-            npm ci --prefix backend || npm install --prefix backend
-          fi
-      - name: Run Lint
-        run: |
-          if [ -d "analytics" ]; then
-            npm run lint --prefix analytics || true
-          else
-            npm run lint --prefix backend || true
-          fi
+        run: npm install
+      - name: Run Tests
+        run: npm test --if-present
 
   test:
     name: Test Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Install dependencies
-        run: |
-          if [ -d "analytics" ]; then
-            npm ci --prefix analytics || npm install --prefix analytics
-          else
-            npm ci --prefix backend || npm install --prefix backend
-          fi
+        run: npm install
       - name: Run Tests
-        run: |
-          if [ -d "analytics" ]; then
-            npm run test --prefix analytics || true
-          else
-            npm run test --prefix backend || true
-          fi
+        run: npm test --if-present
 
   build-and-deploy:
     name: Build, Push ECR & Deploy Backend
@@ -78,14 +64,10 @@ jobs:
           ECR_REPOSITORY: backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          if [ -d "analytics" ]; then
-            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./analytics
-          else
-            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
-          fi
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./analytics
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Deploy to Kubernetes Cluster
         run: |
           aws eks update-kubeconfig --name cluster --region us-east-1 || true
-          kubectl set image deployment/backend-deployment backend=$ECR_REGISTRY/backend:${{ github.sha }} || true
+          kubectl set image deployment/backend-deployment backend=${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }} || true

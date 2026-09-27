@@ -10,6 +10,9 @@ jobs:
   lint:
     name: Lint Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,27 +22,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('analytics/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Install dependencies
-        run: |
-          if [ -d "analytics" ]; then
-            npm ci --prefix analytics || npm install --prefix analytics
-          else
-            npm ci --prefix backend || npm install --prefix backend
-          fi
+        run: npm install
       - name: Run Lint
-        run: |
-          if [ -d "analytics" ]; then
-            npm run lint --prefix analytics || true
-          else
-            npm run lint --prefix backend || true
-          fi
+        run: npm run lint --if-present
 
   test:
     name: Test Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./analytics
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,23 +45,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('analytics/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Install dependencies
-        run: |
-          if [ -d "analytics" ]; then
-            npm ci --prefix analytics || npm install --prefix analytics
-          else
-            npm ci --prefix backend || npm install --prefix backend
-          fi
+        run: npm install
       - name: Run Tests
-        run: |
-          if [ -d "analytics" ]; then
-            npm run test --prefix analytics || true
-          else
-            npm run test --prefix backend || true
-          fi
+        run: npm test --if-present
 
   build:
     name: Build Backend Docker Image
@@ -74,9 +60,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker Image
-        run: |
-          if [ -d "analytics" ]; then
-            docker build -t backend:latest ./analytics
-          else
-            docker build -t backend:latest ./backend
-          fi
+        run: docker build -t backend:latest ./analytics
