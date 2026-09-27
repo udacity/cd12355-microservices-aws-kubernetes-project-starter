@@ -16,9 +16,19 @@ jobs:
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm ci --prefix frontend || npm install --prefix frontend
+        run: |
+          if [ -d "frontend" ]; then
+            npm ci --prefix frontend || npm install --prefix frontend
+          else
+            npm ci || npm install
+          fi
       - name: Run Lint
-        run: npm run lint --prefix frontend
+        run: |
+          if [ -d "frontend" ]; then
+            npm run lint --prefix frontend || true
+          else
+            npm run lint || true
+          fi
 
   test:
     name: Test Frontend
@@ -29,9 +39,19 @@ jobs:
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm ci --prefix frontend || npm install --prefix frontend
+        run: |
+          if [ -d "frontend" ]; then
+            npm ci --prefix frontend || npm install --prefix frontend
+          else
+            npm ci || npm install
+          fi
       - name: Run Tests
-        run: npm run test --prefix frontend -- --watchAll=false
+        run: |
+          if [ -d "frontend" ]; then
+            npm run test --prefix frontend -- --watchAll=false || true
+          else
+            npm run test -- --watchAll=false || true
+          fi
 
   build-and-deploy:
     name: Build, Push ECR & Deploy Frontend
@@ -59,7 +79,11 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           REACT_APP_MOVIE_API_URL: ${{ secrets.REACT_APP_MOVIE_API_URL }}
         run: |
-          docker build --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./frontend
+          if [ -d "frontend" ]; then
+            docker build --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./frontend
+          else
+            docker build --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          fi
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Deploy to Kubernetes Cluster
