@@ -10,53 +10,39 @@ jobs:
   lint:
     name: Lint Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Install dependencies
-        run: |
-          if [ -f "package.json" ]; then npm install; else echo "No package.json found, skipping"; fi
-      - name: Run Lint
-        run: |
-          if [ -f "package.json" ]; then npm run lint --if-present; else echo "Skipping lint"; fi
+      - run: npm install
+      - run: npm run lint
 
   test:
     name: Test Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Install dependencies
-        run: |
-          if [ -f "package.json" ]; then npm install; else echo "No package.json found, skipping"; fi
-      - name: Run Tests
-        run: |
-          if [ -f "package.json" ]; then npm test --if-present -- --watchAll=false; else echo "Skipping test"; fi
+      - run: npm install
+      - run: npm test
 
   build:
     name: Build Frontend Docker Image
     needs: [lint, test]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker Image
-        run: |
-          if [ -f "Dockerfile" ]; then docker build -t frontend:latest .; else echo "No Dockerfile found, simulating build"; fi
+        run: docker build -t frontend:latest .

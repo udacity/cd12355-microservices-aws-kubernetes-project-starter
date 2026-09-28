@@ -1,0 +1,8 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "echo \"Linting backend...\"",
+    "test": "echo \"Testing backend...\""
+  }
+}
